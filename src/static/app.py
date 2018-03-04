@@ -20,31 +20,3 @@ loop = asyncio.get_event_loop()
 loop.run_until_complete(init(loop))
 loop.run_forever()
 
-async def create_pool(loop, **kw):
-    logging.info('create database connection pool...')
-    global __pool
-    __pool = await aiomysql.create_pool(
-        host = kw.get('host', 'localhost'),
-        port = kw.get('port', 3306),
-        user = kw['user'],
-        password = kw['password'],
-        charset = kw.get('chartset', 'utf8'),
-        db = kw['db'],
-        autocommit = kw.get('autocommit', True),
-        maxsize = kw.get('maxsize', 10),
-        minsize = kw.get('minsize'), 1),
-        loop = loop
-    )
-async def select(sql, args, size=None):
-    log(sql, args)
-    global __pool
-    with (await __pool) as conn:
-        cur = await conn.cursor(aiomysql.DictCursor)
-        await cur.execute(sql.replace('?', '%s'), args or ())
-        if size:
-            rs = await cur.fetchmany(size)
-        else:
-            rs = await cur.fetchall()
-        await cur.close()
-        logging.info('row returned: %s' % len(rs))
-        return rs
