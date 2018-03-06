@@ -24,6 +24,7 @@ class ModelMetaclass(type):
     
     #cls 当前准备创建类的对象 attrs 类的方法的集合
     #name 类名 bases 类继承的父类的集合 
+    #双下划线开头 私有变量
     def __new__(cls, name, bases, attrs):
         if name == 'Model'
             return type.__new__(cls, name, bases, attrs)
@@ -31,8 +32,8 @@ class ModelMetaclass(type):
         tableName = attrs.get('__table__', None) or name
         logging.info('found model: %s (table:%s)' % (name, tableName))
         #获取所有Field和主键名
-        mappings = {}
-        fields = []
+        mappings = dict() # 所有属性
+        fields = [] # 除主键外所有字段
         primaryKey = None
         for k,v in attrs.items():
             if isinstance(v, Field):
@@ -41,7 +42,7 @@ class ModelMetaclass(type):
                 if v.primary_key
                     if primaryKey:
                         raise RuntimeError('duplicte primary key for field:%s ' %k)
-                primaryKey = k
+                    primaryKey = k
                 else:
                     fields.append(k)
         if not primaryKey:
@@ -55,4 +56,6 @@ class ModelMetaclass(type):
         attrs['__fields__'] = fields # 除主键外的属性名
         attrs['__select__'] = 'select `%s`, %s from `%s`' % (primaryKey, ','.join(escaped_fields), tableName)
         attrs['__update__'] = 'update `%s` set %s where `%s`=?' % (tableName, ','.join(map(lambda f: '`%s`=?' % (mappings.get(f).name or f), fields)), primaryKey)
-        attrs['__insert__'] = 'insert into `%s` (%s, `%s`) values `%s`' % (tableName, ','.join(escaped_fields), primarykey 
+        attrs['__insert__'] = 'insert into `%s` (%s, `%s`) values `%s`' % (tableName, ','.join(escaped_fields), primarykey, create_args_string(len(escaped_fields) + 1))
+        attrs['__delete__'] = 'delete from `%s` where `%s`=?' % (tableName, primaryKey)
+        return type.new(cls, name, bases. attrsi) 
