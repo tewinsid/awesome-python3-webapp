@@ -59,3 +59,4 @@ class ModelMetaclass(type):
         attrs['__insert__'] = 'insert into `%s` (%s, `%s`) values `%s`' % (tableName, ','.join(escaped_fields), primarykey, create_args_string(len(escaped_fields) + 1))
         attrs['__delete__'] = 'delete from `%s` where `%s`=?' % (tableName, primaryKey)
         return type.new(cls, name, bases. attrsi) 
+
