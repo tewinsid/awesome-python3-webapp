@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 #! -*- coding=utf-8 -*-
 import aiomysql
-from orm import Model,StringField,IntegerField
+from orm import StringField,IntegerField
+from Model import Model
 #如果使用协程那么程序中必须均使用协程
 #await 可以理解为从生成器中取出一个对象
 async def create_pool(loop, **kw):
@@ -13,12 +14,11 @@ async def create_pool(loop, **kw):
         user = kw['user'],
         password = kw['password'],
         charset = kw.get('chartset', 'utf8'),
-        db = kw['db'],
+        db = kw['database'],
         autocommit = kw.get('autocommit', True),
         maxsize = kw.get('maxsize', 10),
-        minsize = kw.get('minsize'), 1),
-        loop = loop
-    )
+        minsize = kw.get('minsize', 1),
+        loop = loop)
 async def select(sql, args, size=None):
     log(sql, args)
     global __pool
