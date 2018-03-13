@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 #! -*- coding=utf-8 -*-
 
-import logging
+import logging, aiomysql
 import time, uuid
 from Field import Field
-from Field import StringField, BooleanField, FloatField, TextField
+from Field import IntegerField, StringField, BooleanField, FloatField, TextField
 
 def create_args_string(num):
     l=[]
@@ -50,7 +50,7 @@ class ModelMetaclass(type):
         attrs['__fields__'] = fields # 除主键外的属性名
         attrs['__select__'] = 'select `%s`, %s from `%s`' % (primaryKey, ','.join(escaped_fields), tableName)
         attrs['__update__'] = 'update `%s` set %s where `%s`=?' % (tableName, ','.join(map(lambda f: '`%s`=?' % (mappings.get(f).name or f), fields)), primaryKey)
-        attrs['__insert__'] = 'insert into `%s` (%s, `%s`) values `%s`' % (tableName, ','.join(escaped_fields), primaryKey, create_args_string(len(escaped_fields) + 1))
+        attrs['__insert__'] = 'insert into `%s` (%s, `%s`) values (%s)' % (tableName, ','.join(escaped_fields), primaryKey, create_args_string(len(escaped_fields) + 1))
         attrs['__delete__'] = 'delete from `%s` where `%s`=?' % (tableName, primaryKey)
         return type.__new__(cls, name, bases, attrs) 
 class Model(dict, metaclass=ModelMetaclass):
@@ -62,8 +62,9 @@ class Model(dict, metaclass=ModelMetaclass):
     def __getattr__(self, key):
         try:
             return self[key]
-        except keyError:
-            raise AttributeError(r"'Model' object has no attribute '%s'" % key)
+        except KeyError:
+            #raise AttributeError(r"'Model' object has no attribute '%s'" % key)
+            return None
     
     def __setattr__(self, key, value):
         self[key] = value
@@ -123,3 +124,52 @@ class Comment(Model):
     user_image = StringField(dll='varchar(500)')
     content = TextField()
     create_at = FloatField(default=time.time)
+async def create_pool(loop, **kw):
+    logging.info('create database connection pool...')
+    global __pool
+    __pool = await aiomysql.create_pool(
+        host = kw.get('host', 'localhost'),
+        port = kw.get('port', 3306),
+        user = kw['user'],
+        password = kw['password'],
+        charset = kw.get('chartset', 'utf8'),
+        db = kw['database'],
+        autocommit = kw.get('autocommit', True),
+        maxsize = kw.get('maxsize', 10),
+        minsize = kw.get('minsize', 1),
+        loop = loop)
+async def select(sql, args, size=None):
+    log(sql, args)
+    global __pool
+    async with __pool.get() as conn:
+        #从connection中取出游标
+        async with conn.cursor(aiomysql.DictCursor) as cur:
+            #为游标赋值sql
+            await cur.execute(sql.replace('?', '%s'), args or ())
+            #当传入size参数的时候取size条否则取全部
+            if size:
+                rs = await cur.fetchmany(size)
+            else:
+                rs = await cur.fetchall()
+                #关闭游标
+        #rs结果集
+        logging.info('row returned: %s' % len(rs))
+        return rs
+#通用执行函数update insert delete
+async def execute(sql, args, autocommit=True):
+    log(sql)
+    async with __pool.get() as conn:
+        if not autocommit:
+            await conn.begin()
+        try:
+            async with conn.cursor(aiomysql.DictCursor) as cur:
+                print(sql.replace('?','%s'), args) 
+                await cur.execute(sql.replace('?','%s'), args)
+                affected = cur.rowcount
+            if not autocommit:
+                await conn.commit()
+        except BaseException as e:
+            if not autocommit:
+                await conn.rollback()
+            raise
+        return affected
