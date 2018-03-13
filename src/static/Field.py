@@ -17,13 +17,16 @@ class StringField(Field):
         super().__init__(name, dll, primary_key, default)
 
 class FloatField(Field):
-    def __init__(self, name=None, primary_key=False, default=None, dll='char(1)'):
-        super().__init__(name, dll, primary_key, default)
+    def __init__(self, name=None, primary_key=False, default=0.0):
+        super().__init__(name, 'float', primary_key, default)
 
 class TextField(Field):
-    def __init__(self, name=None, primary_key=False, default=None, dll='varchar(400)'):
-        super().__init__(name, dll, primary_key, default)
+    def __init__(self, name=None, primary_key=False, default=None):
+        super().__init__(name, 'text', primary_key, default)
 
 class IntegerField(Field):
-    def __init__(self, name=None, primary_key=False, default=None, dll='int'):
-        super().__init__(name, dll, primary_key, default)
+    def __init__(self, name=None, primary_key=False, default=0):
+        super().__init__(name, 'bigint', primary_key, default)
+class BooleanField(Field):
+    def __init__(self, name=None, default=False):
+        super().__init__(name, 'boolean', False, default)
