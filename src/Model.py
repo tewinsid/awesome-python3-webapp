@@ -43,14 +43,14 @@ class ModelMetaclass(type):
             raise RuntimeError('primary key not found')
         for k in mappings.keys():
             attrs.pop(k)
-        escaped_fields = list(map(lambda f: '‘%s’' % f, fields))
+        escaped_fields = list(map(lambda f: '`%s`' % f, fields))
         attrs['__mappings__'] = mappings # 保存属性和列的映射关系
         attrs['__table__'] = tableName
         attrs['__primary_key__'] = primaryKey # 主键属性名
         attrs['__fields__'] = fields # 除主键外的属性名
         attrs['__select__'] = 'select `%s`, %s from `%s`' % (primaryKey, ','.join(escaped_fields), tableName)
         attrs['__update__'] = 'update `%s` set %s where `%s`=?' % (tableName, ','.join(map(lambda f: '`%s`=?' % (mappings.get(f).name or f), fields)), primaryKey)
-        attrs['__insert__'] = 'insert into `%s` (%s, `%s`) values (%s)' % (tableName, ','.join(escaped_fields), primaryKey, create_args_string(len(escaped_fields) + 1))
+        attrs['__insert__'] = 'insert into `%s` (%s, `%s`) values (%s)' % (tableName, ', '.join(escaped_fields), primaryKey, create_args_string(len(escaped_fields) + 1))
         attrs['__delete__'] = 'delete from `%s` where `%s`=?' % (tableName, primaryKey)
         return type.__new__(cls, name, bases, attrs) 
 class Model(dict, metaclass=ModelMetaclass):
@@ -102,7 +102,7 @@ class User(Model):
     admin = BooleanField()
     name = StringField(dll='varchar(50)')
     image = StringField(dll='varchar(500)')
-    create_at = FloatField(default=time.time)
+    created_at = FloatField(default=time.time)
 
 class Blog(Model):
     __table__ = 'blogs'
@@ -114,7 +114,7 @@ class Blog(Model):
     name = StringField(dll='varchar(50)')
     summary = StringField(dll='varchar(200)')
     content = TextField()
-    create_at = FloatField(default=time.time)
+    created_at = FloatField(default=time.time)
 class Comment(Model):
     __table__ = 'commons'
     id = StringField(primary_key=True, default=next_id, dll='varchar(50)')
@@ -123,7 +123,7 @@ class Comment(Model):
     user_name = StringField(dll='varchar(50)')
     user_image = StringField(dll='varchar(500)')
     content = TextField()
-    create_at = FloatField(default=time.time)
+    created_at = FloatField(default=time.time)
 async def create_pool(loop, **kw):
     logging.info('create database connection pool...')
     global __pool
