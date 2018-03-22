@@ -170,27 +170,3 @@ def add_routes(app, module_name):
             paht = getattr(fn, '__route__', None)
             if method and path:
                 add_route(app, fn)
-
-#使用handler
-async def logger_factory(app, handler):
-    async def logger(request):
-        #记录日志
-        logging.info('Request: %s %s' % (request.method, request.path))
-        #继续处理请求
-        return (await handler(request))
-    return logger
-async def response_factory(app, handler):
-    async response(request):
-        r = await handler(request)
-        if isinstance(r, web.SreamResponse):
-            return r
-        if isinstance(r, bytes):
-            resp = web.Response(body=r)
-            resp.content_type = 'application/octet-stream'
-            return resp
-        if isinstance(r, str):
-            resp = web.Response(body=r.encode('utf-8')
-            resp.content_type = 'text/html;charset=utf-8'
-            return resp
-        if isinstance(r, dict):
-            #TODO
