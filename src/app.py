@@ -55,7 +55,7 @@ async def response_factory(app, handler):
     return response
 
 def datetime_filter(t):
-    delta = int(time.time() - t)
+    delta = int(time.time() - float(t))
     if delta < 60:
         return u'1分钟前'
     if delta < 3600:
@@ -97,7 +97,7 @@ async def init(loop):
         logger_factory, response_factory
     ])
 
-    init_jinja2(app, filters=dict(datatime=datetime_filter))
+    init_jinja2(app, filters=dict(datetime=datetime_filter))
     #路由扫描
     add_routes(app, 'handler')
     add_static(app)

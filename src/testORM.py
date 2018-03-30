@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 #! -*- coding=utf-8 -*-
-from Model import User, Blog, Comment
-import Model
+from orm import User, Blog, Comment
+import orm
 import asyncio
 
 async def test(loop):
-    await Model.create_pool(loop=loop, user='root', password='1', database='awesome')
+    await orm.create_pool(loop=loop, user='root', password='1', db='awesome')
     
-    u = User(name='Test', email='test@email.com', passwd='123', image='about:blank')
+    u = User(name='tewinsdi', email='tewisid@email.com', passwd='123', image='about:blank')
     
     await u.save()
 
